@@ -1,7 +1,7 @@
 This script make full mysql dump and incremental files backup.
 
 Suppose this script placed in folder
-~/backups
+~/backups/
 
 and your have configuration:
 ~/backups/
@@ -15,3 +15,15 @@ To run backup task type in console:
 
 then backup data will be placed in
 ~/backups/data/myserver/myaccount/
+
+
+DEPENDENCIES:
+You need to be installed locally:
+  rsync
+  tar
+  pigz
+remotely:
+  rsync
+  mysqldump
+  tar
+  gzip
