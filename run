@@ -1,0 +1,19 @@
+#!/usr/bin/env ruby
+
+$:.unshift File.expand_path(File.dirname(__FILE__))
+require 'lib/backup'
+
+DATA_PATH = File.expand_path(File.join(File.dirname(__FILE__), 'data'))
+CONFS_PATH = File.expand_path(File.join(File.dirname(__FILE__), 'confs'))
+
+task = $*[0]
+if task
+  begin
+    Backup.require_task task
+  rescue StandardError=>e
+    puts 'Error: '+e.message + e.backtrace
+  end
+else
+  puts "Illegal command format, expected: run taskname\nExample: run myserver/mysite"
+  #@todo list available tasks
+end
