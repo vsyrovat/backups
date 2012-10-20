@@ -1,0 +1,17 @@
+This script make full mysql dump and incremental files backup.
+
+Suppose this script placed in folder
+~/backups
+
+and your have configuration:
+~/backups/
+    ...
+    confs/
+      myserver/
+        myaccount.rb
+
+To run backup task type in console:
+~/backups/run myserver/myaccount
+
+then backup data will be placed in
+~/backups/data/myserver/myaccount/
