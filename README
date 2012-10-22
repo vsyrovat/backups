@@ -18,10 +18,12 @@ then backup data will be placed in
 
 
 DEPENDENCIES:
-You need to be installed locally:
+You need to be installed
+locally:
   rsync
   tar
   pigz
+  sshpass
 remotely:
   rsync
   mysqldump

@@ -46,16 +46,18 @@ class Backup
     raise ':dbname required' unless options[:dbname]
     raise ':user required' unless options[:user]
     raise ':password required' unless options[:password]
-    puts "Backing up database #{options[:dbname]}"
     remote_sql_name = "#{options[:dbname]}_#{@time}.sql"
     remote_sql = "/tmp/#{remote_sql_name}"
     remote_tgz_name = "#{options[:dbname]}_#{@time}.sql.tar.gz"
     remote_tgz = "/tmp/#{remote_tgz_name}"
     local_tgz = File.join(@local_dir, "#{options[:dbname]}.sql.tar.gz")
     begin
+      puts "Create remote dump of #{options[:dbname]}..."
       @ssh.exec!("mysqldump -u #{options[:user]} -p#{options[:password]} #{options[:dbname]} > #{remote_sql}")
       begin
+        puts "Compress dump on remote..."
         @ssh.exec!("tar --directory=/tmp -cvzf #{remote_tgz} #{remote_sql_name}")
+        puts "Download dump..."
         @ssh.sftp.download!(remote_tgz, local_tgz)
       ensure
         @ssh.exec!("rm #{remote_tgz}")
