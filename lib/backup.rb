@@ -20,9 +20,9 @@ class Backup
     @ssh_user = options[:user]
     @ssh_password = options[:password]
     @time = Time.now.utc.to_s.gsub(' ', '_')
-    @local_dir = File.join(DATA_PATH, @task, @time)
-    FileUtils.mkdir_p(@local_dir)
-    @task_data_dir = File.join(DATA_PATH, @task)
+    @task_dir = File.join(DATA_PATH, @task)
+    @snapshot_dir = File.join(DATA_PATH, @task, @time)
+    FileUtils.mkdir_p(@snapshot_dir)
     begin
       puts "Connecting to #{options[:host]}"
       Net::SSH.start(options[:host], options[:user], {:password => options[:password], :port => options[:port]}) do |ssh|
@@ -46,26 +46,38 @@ class Backup
     raise ':dbname required' unless options[:dbname]
     raise ':user required' unless options[:user]
     raise ':password required' unless options[:password]
-    remote_sql_name = "#{options[:dbname]}_#{@time}.sql"
-    remote_sql = "/tmp/#{remote_sql_name}"
-    remote_tgz_name = "#{options[:dbname]}_#{@time}.sql.tar.gz"
-    remote_tgz = "/tmp/#{remote_tgz_name}"
-    local_tgz = File.join(@local_dir, "#{options[:dbname]}.sql.tar.gz")
+    # remote files
+    remote_sql_basename = "#{options[:dbname]}_#{@time}.sql"
+    remote_sql = "/tmp/#{remote_sql_basename}"
+    remote_tgz_basename = "#{options[:dbname]}_#{@time}.sql.gz"
+    remote_tgz = "/tmp/#{remote_tgz_basename}"
+    # local files
+    task_sql_basename = "#{options[:dbname]}.sql"
+    task_sql = File.join(@task_dir, task_sql_basename)
+    task_gz_basename = "#{options[:dbname]}.sql.gz"
+    task_gz = File.join(@task_dir, task_gz_basename)
+    snapshot_gz = File.join(@snapshot_dir, task_gz_basename)
     begin
       puts "Create remote dump of #{options[:dbname]}..."
       @ssh.exec!("mysqldump -u #{options[:user]} -p#{options[:password]} #{options[:dbname]} > #{remote_sql}")
       begin
-        puts "Compress dump on remote..."
-        @ssh.exec!("tar --directory=/tmp -cvzf #{remote_tgz} #{remote_sql_name}")
+        #puts "Compress dump on remote..."
+        ##@ssh.exec!("tar --directory=/tmp -cvzf #{remote_tgz} #{remote_sql_basename}")
+        #puts "gzip --rsyncable --fast #{remote_sql}"
+        #@ssh.exec!("gzip --rsyncable --fast #{remote_sql}")
         puts "Download dump..."
-        @ssh.sftp.download!(remote_tgz, local_tgz)
+        puts %x(rsync -e "sshpass -p '#{@ssh_password}' ssh" -avz "#{@ssh_user}@#{@ssh_host}:#{remote_sql}" "#{task_sql}")
+        puts "Compress dump on local..."
+        %x(pigz -k #{task_sql})
+        FileUtils.mv(task_gz, snapshot_gz)
+        #@ssh.sftp.download!(remote_tgz, local_tgz)
+        puts "Dump saved to #{task_gz_basename}"
       ensure
-        @ssh.exec!("rm #{remote_tgz}")
+        #@ssh.exec!("rm #{remote_tgz}")
       end
     ensure
       @ssh.exec!("rm #{remote_sql}")
     end
-    puts "Dump saved to #{local_tgz}"
   end
 
   def self.rsync remote_path
@@ -73,8 +85,7 @@ class Backup
     begin
       puts "Start syncing #{remote_path} to #{local_files_dir}"
       FileUtils.mkdir_p local_files_dir
-      #p %Q(rsync -e "sshpass -p '#{@ssh_password}' ssh" -avz "#{@ssh_user}@#{@ssh_host}:#{remote_path}" "#{local_files_dir}")
-      puts %x(rsync -e "sshpass -p '#{@ssh_password}' ssh" -avz --delete "#{@ssh_user}@#{@ssh_host}:#{remote_path}" "#{local_files_dir}")
+      puts %x(rsync -e "sshpass -p '#{@ssh_password}' ssh" -az --delete "#{@ssh_user}@#{@ssh_host}:#{remote_path}" "#{local_files_dir}")
       tgz = File.join(DATA_PATH, @task, @time, 'files.tar.gz')
       puts "Compressing #{local_files_dir} to #{tgz}"
       %x(tar --directory="#{local_files_dir}" --force-local --use-compress-program=pigz -cvf "#{tgz}" ".")

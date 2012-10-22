@@ -27,5 +27,3 @@ locally:
 remotely:
   rsync
   mysqldump
-  tar
-  gzip
