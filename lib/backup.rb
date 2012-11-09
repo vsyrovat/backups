@@ -59,7 +59,7 @@ class Backup
     snapshot_gz = File.join(@snapshot_dir, task_gz_basename)
     begin
       puts "Create remote dump of #{options[:dbname]}..."
-      @ssh.exec!("mysqldump -u #{options[:user]} -p#{options[:password]} #{options[:dbname]} > #{remote_sql}")
+      @ssh.exec!("mysqldump -u #{options[:user]} -p#{options[:password]} #{options[:dbname]} --single-transaction --quick > #{remote_sql}")
       begin
         #puts "Compress dump on remote..."
         ##@ssh.exec!("tar --directory=/tmp -cvzf #{remote_tgz} #{remote_sql_basename}")
