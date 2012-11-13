@@ -3,4 +3,5 @@ Backup.task do
     mysqldump :dbname=>'dbname', :user => 'user', :password => 'password'
     rsync '~/path/to/project/'
   end
+  remove_older 7*86400
 end

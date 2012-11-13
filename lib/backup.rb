@@ -2,6 +2,7 @@ require 'rubygems'
 require 'net/ssh'
 require 'net/sftp'
 require 'fileutils'
+require 'date'
 
 
 class Backup
@@ -85,11 +86,21 @@ class Backup
     begin
       puts "Start syncing #{remote_path} to #{local_files_dir}"
       FileUtils.mkdir_p local_files_dir
-      puts %x(rsync -e "sshpass -p '#{@ssh_password}' ssh" -az --delete "#{@ssh_user}@#{@ssh_host}:#{remote_path}" "#{local_files_dir}")
+      puts %x(rsync -e "sshpass -p '#{@ssh_password}' ssh" -avz --delete "#{@ssh_user}@#{@ssh_host}:#{remote_path}" "#{local_files_dir}")
       tgz = File.join(DATA_PATH, @task, @time, 'files.tar.gz')
       puts "Compressing #{local_files_dir} to #{tgz}"
       %x(tar --directory="#{local_files_dir}" --force-local --use-compress-program=pigz -cvf "#{tgz}" ".")
     ensure
     end
+  end
+
+  def self.remove_older period
+    now = DateTime.now
+    Dir.entries(File.join(DATA_PATH, @task)).select { |entry|
+      entry=~/^\d{4}-\d{2}-\d{2}_\d{2}:\d{2}:\d{2}_UTC$/ and (now-DateTime.parse(entry))*86400 > period
+    }.each { |entry|
+      puts "Remove old backup #{entry}"
+      FileUtils.rm_rf File.join(DATA_PATH, @task, entry)
+    }
   end
 end
