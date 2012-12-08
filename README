@@ -3,9 +3,8 @@ This script make full mysql dump and incremental files backup.
 Suppose this script placed in folder
 ~/backups/
 
-and your have configuration:
+and you have configuration:
 ~/backups/
-    ...
     confs/
       myserver/
         myaccount.rb
