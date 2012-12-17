@@ -94,12 +94,14 @@ class Backup
     end
   end
 
-  def self.remove_older period
+  # Remove obsolete backups
+  # @param int days
+  def self.remove_obsolete seconds
     now = DateTime.now
     Dir.entries(File.join(DATA_PATH, @task)).select { |entry|
-      entry=~/^\d{4}-\d{2}-\d{2}_\d{2}:\d{2}:\d{2}_UTC$/ and (now-DateTime.parse(entry))*86400 > period
+      entry=~/^\d{4}-\d{2}-\d{2}_\d{2}:\d{2}:\d{2}_UTC$/ and (now-DateTime.parse(entry))*86400 > seconds
     }.each { |entry|
-      puts "Remove old backup #{entry}"
+      puts "Remove obsolete backup #{entry}"
       FileUtils.rm_rf File.join(DATA_PATH, @task, entry)
     }
   end
