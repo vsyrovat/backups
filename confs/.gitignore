@@ -1,3 +1,5 @@
 *
 !.gitignore
-!sample-conf.rb
+!sample-server.rb
+!sample-server/
+!sample-server/sample-site.rb

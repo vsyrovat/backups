@@ -6,16 +6,13 @@ require 'date'
 
 
 class Backup
-  def self.require_task task
+  def self.task(task, &block)
     @task = task
-    require File.join(CONFS_PATH, task)
-  end
-
-  def self.task &block
     class_eval &block if block_given?
+    @task = nil
   end
 
-  def self.ssh options={}, &block
+  def self.ssh(options={}, &block)
     options[:port] ||= 22
     @ssh_host = options[:host]
     @ssh_user = options[:user]
@@ -39,9 +36,10 @@ class Backup
         puts "Connection closed"
       end
     end
+    @ssh_host, @ssh_user, @ssh_password, @time, @task_dir, @snapshot_dir, @ssh = nil, nil, nil, nil, nil, nil, nil
   end
 
-  def self.mysqldump options
+  def self.mysqldump(options)
     options[:host] ||= 'localhost'
     raise 'open ssh session first' unless @ssh
     raise ':dbname required' unless options[:dbname]
@@ -81,7 +79,7 @@ class Backup
     end
   end
 
-  def self.rsync remote_path
+  def self.rsync(remote_path)
     local_files_dir = File.join(DATA_PATH, @task, 'current_files')
     begin
       puts "Start syncing #{remote_path} to #{local_files_dir}"
